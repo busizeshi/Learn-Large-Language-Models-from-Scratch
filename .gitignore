@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+ENV/
+
+# 包管理
+pip-log.txt
+pip-delete-this-directory.txt
+poetry.lock
+uv.lock
+
+# 模型与数据文件（LLM 项目常见大文件）
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.gguf
+*.onnx
+*.h5
+models/
+checkpoints/
+data/
+datasets/
+
+# PDF 等生成的文档
+*.pdf
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 日志与临时文件
+*.log
+logs/
+tmp/
+temp/
