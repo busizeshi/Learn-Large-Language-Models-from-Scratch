@@ -2,3 +2,4 @@
 # PyTorch（Windows 下 pip 默认安装 CPU 版；如需 GPU/CUDA 版本，请按 https://pytorch.org 指定 index-url 安装）
 torch>=2.0
 numpy>=1.24
+pandas>=1.4
