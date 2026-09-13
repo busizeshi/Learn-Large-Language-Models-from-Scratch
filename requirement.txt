@@ -3,3 +3,6 @@
 torch>=2.0
 numpy>=1.24
 pandas>=1.4
+matplotlib>=3.7
+torchvision>=0.15.0
+d2l>=0.17.6
