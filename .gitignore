@@ -16,7 +16,8 @@ venv/
 env/
 ENV/
 
-.pdf
+# PDF 文档不纳入版本管理
+*.pdf
 
 # 包管理
 pip-log.txt
