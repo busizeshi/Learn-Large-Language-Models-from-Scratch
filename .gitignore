@@ -36,9 +36,6 @@ checkpoints/
 data/
 datasets/
 
-# PDF 等生成的文档
-*.pdf
-
 # Jupyter Notebook
 .ipynb_checkpoints/
 
