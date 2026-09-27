@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多头自注意力 · 一步一步手算拆解</title>
+<style>
+  /* ========== 基础变量：纸面 / 墨色 / 朱砂 / 头1 青 / 头2 赭 ========== */
+  :root{
+    --paper:#f7f1e3;
+    --card:#fffdf6;
+    --ink:#2a251d;
+    --soft:#7a6f5d;
+    --line:#e0d5bd;
+    --acc:#b23a26;
+    --acc-soft:#f6e2da;
+    --teal:#1e6f68;
+    --teal-soft:#e0efec;
+    --amber:#a4622a;
+    --amber-soft:#f4e8d5;
+    --serif:"Palatino Linotype","Georgia","Songti SC","STSong","SimSun",serif;
+    --sans:"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    --mono:"Cascadia Code","JetBrains Mono",Consolas,"Courier New",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);font-size:16px;line-height:1.8;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+  /* ========== 顶部标题 ========== */
+  .hero{padding:60px 0 26px}
+  .hero-in{display:flex;justify-content:space-between;align-items:center;gap:44px}
+  .hero h1{
+    font-family:var(--serif);font-size:42px;line-height:1.25;margin:0 0 10px;
+    letter-spacing:.02em;
+  }
+  .hero h1 em{font-style:normal;color:var(--acc)}
+  .hero .sub{color:var(--soft);font-size:16.5px;margin:0 0 18px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  .chip{
+    font-family:var(--mono);font-size:12.5px;padding:5px 11px;border-radius:999px;
+    border:1px solid var(--line);background:var(--card);color:var(--soft);
+  }
+  .chip b{color:var(--ink);font-weight:600}
+  .pipeline{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .pipeline .stg{
+    font-family:var(--mono);font-size:12px;padding:5px 9px;border-radius:8px;
+    border:1px solid var(--line);background:var(--card);
+  }
+  .pipeline .stg b{color:var(--acc);font-weight:600}
+  .pipeline .ar{color:var(--soft);font-family:var(--serif);font-size:15px}
+  /* 标题旁的装饰性注意力小热图 */
+  .deco{display:grid;grid-template-columns:repeat(4,26px);gap:4px;flex:none}
+  .deco span{height:26px;border-radius:5px;background:var(--acc);display:block}
+
+  /* ========== 步骤导航 ========== */
+  #topnav{
+    position:sticky;top:0;z-index:50;
+    background:rgba(247,241,227,.94);backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);
+  }
+  #topnav .in{max-width:1080px;margin:0 auto;padding:8px 20px;display:flex;gap:6px;flex-wrap:wrap}
+  #topnav a{
+    text-decoration:none;color:var(--soft);font-size:13.5px;
+    padding:6px 12px;border-radius:999px;transition:all .15s;
+  }
+  #topnav a:hover{background:var(--acc-soft);color:var(--ink)}
+  #topnav a.active{background:var(--ink);color:var(--paper)}
+
+  /* ========== 章节卡片 ========== */
+  main section{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:32px 36px;margin:26px 0;scroll-margin-top:76px;
+    box-shadow:0 1px 0 rgba(0,0,0,.03);
+  }
+  .step-head{display:flex;align-items:center;gap:14px;margin:0 0 6px}
+  .step-no{
+    flex:none;width:36px;height:36px;border-radius:50%;
+    background:var(--acc);color:#fff;font-family:var(--serif);font-size:19px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .step-no.plain{background:var(--ink)}
+  .step-head h2{font-family:var(--serif);font-size:25px;margin:0;font-weight:600}
+  .shape-chip{
+    margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--soft);
+    border:1px dashed var(--line);border-radius:8px;padding:4px 10px;white-space:nowrap;
+  }
+  main p{margin:12px 0}
+  main strong{color:var(--acc);font-weight:600}
+  .dim{color:var(--soft)}
+  .mnote{font-size:14.5px;color:var(--soft)}
+
+  /* 公式 */
+  .formula{
+    font-family:var(--serif);font-size:21px;text-align:center;margin:20px 0;
+    letter-spacing:.02em;
+  }
+  .formula sub,.formula sup{font-size:.62em}
+  .formula .fn{font-family:var(--mono);font-size:16px;color:var(--teal)}
+
+  /* 代码块 */
+  .code{
+    background:#2b2620;color:#efe6d3;border-radius:12px;
+    font-family:var(--mono);font-size:13px;line-height:1.75;
+    padding:20px 24px;overflow-x:auto;margin:18px 0;
+  }
+  .code .cm{color:#9b8f78}
+  .code .ba{color:#e8896f;font-weight:700}
+  .code .kw{color:#8fbcb5}
+
+  /* 提示盒 */
+  .note,.why,.warn{
+    border-left:3px solid var(--teal);background:#f0f6f4;
+    padding:13px 18px;border-radius:0 10px 10px 0;margin:18px 0;font-size:15px;
+  }
+  .why{border-left-color:var(--acc);background:var(--acc-soft)}
+  .warn{border-left-color:#8a6d1a;background:#faf3dd}
+  .note b,.why b,.warn b{font-weight:600}
+  .hint{
+    border:1px dashed var(--line);border-radius:10px;background:#fbf7ec;
+    padding:10px 16px;font-size:14px;color:var(--soft);margin:16px 0;
+  }
+  .hint i{font-style:normal;color:var(--teal);font-weight:600}
+  .hint u{text-decoration:none;color:var(--amber);font-weight:600}
+
+  /* ========== 矩阵展示 ========== */
+  .mrow{display:flex;flex-wrap:wrap;align-items:center;gap:22px;margin:18px 0}
+  .mat{display:inline-flex;flex-direction:column;align-items:center;gap:6px}
+  .cap{font-family:var(--mono);font-size:12.5px;color:var(--soft)}
+  .cap b{color:var(--ink);font-weight:600}
+  .op{font-family:var(--serif);font-size:21px;color:var(--soft);padding:0 2px}
+  .op big{font-size:14px;vertical-align:super}
+  .stage{
+    font-family:var(--mono);font-size:11.5px;color:var(--soft);text-align:center;
+    border:1px dashed var(--line);border-radius:8px;padding:8px 10px;line-height:1.7;
+    background:#fbf7ec;
+  }
+  .mtx-wrap{position:relative;display:inline-block;padding:7px 12px}
+  .mtx-wrap::before,.mtx-wrap::after{
+    content:"";position:absolute;top:0;bottom:0;width:8px;
+    border:1.6px solid var(--ink);
+  }
+  .mtx-wrap::before{left:0;border-right:none}
+  .mtx-wrap::after{right:0;border-left:none}
+  .mtx-wrap.w1::before,.mtx-wrap.w1::after{border-color:var(--teal)}
+  .mtx-wrap.w2::before,.mtx-wrap.w2::after{border-color:var(--amber)}
+  table.mtx{border-collapse:collapse;font-family:var(--mono);font-size:14px}
+  .mtx td{padding:4px 10px;text-align:right;min-width:46px;border-radius:4px}
+  .mtx td.lbl{color:var(--soft);font-size:12px;min-width:22px;text-align:center}
+  .h1col{background:var(--teal-soft)}
+  .h2col{background:var(--amber-soft)}
+  .hla{background:var(--teal-soft);box-shadow:inset 0 0 0 1px var(--teal)}
+  .hlb{background:var(--amber-soft);box-shadow:inset 0 0 0 1px var(--amber)}
+  .hlr{outline:2px solid var(--acc);cursor:crosshair}
+
+  /* 手算展开盒 */
+  .calcbox{
+    background:#fbf7ec;border:1px dashed var(--line);border-radius:10px;
+    padding:14px 18px;margin:16px 0;font-size:15px;
+  }
+  .calcbox p{margin:8px 0}
+  .exp{
+    font-family:var(--mono);font-size:13.5px;background:#fff;
+    border:1px solid var(--line);border-radius:8px;
+    padding:8px 14px;display:inline-block;margin:5px 4px 5px 0;
+  }
+  .exp b{color:var(--acc);font-weight:600}
+
+  /* softmax 明细表 */
+  table.sm{border-collapse:collapse;font-family:var(--mono);font-size:13px;margin:6px 0}
+  .sm td{padding:5px 13px;border-bottom:1px dashed var(--line);text-align:right}
+  .sm td.lbl{font-family:var(--sans);color:var(--soft);font-size:12.5px;text-align:left}
+  .sm tr:last-child td{border-bottom:none}
+
+  .duo{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin:18px 0}
+  .pair{
+    border:1px solid var(--line);border-radius:12px;padding:16px 20px;
+    background:var(--card);flex:1 1 380px;
+  }
+  .pair .t{font-family:var(--serif);font-size:16.5px;margin:0 0 10px}
+  .pairin{display:flex;flex-wrap:wrap;gap:20px;align-items:center}
+
+  /* 速查表 & 易错点 */
+  table.sheet{border-collapse:collapse;width:100%;font-size:14.5px;margin:14px 0}
+  .sheet th,.sheet td{border:1px solid var(--line);padding:8px 13px;text-align:left}
+  .sheet th{background:#f3ecdd;font-family:var(--serif);font-weight:600}
+  .sheet td.mo{font-family:var(--mono);font-size:13px;white-space:nowrap}
+  ol.pit{padding-left:22px;margin:12px 0}
+  ol.pit li{margin:10px 0}
+  ol.pit b{color:var(--acc)}
+
+  footer{
+    text-align:center;color:var(--soft);font-size:13.5px;
+    padding:30px 20px 46px;
+  }
+
+  @media (max-width:760px){
+    .hero-in{flex-direction:column;align-items:flex-start}
+    .deco{display:none}
+    .hero h1{font-size:32px}
+    main section{padding:24px 20px}
+    .shape-chip{display:none}
+  }
+  @media print{
+    #topnav{display:none}
+    main section{break-inside:avoid;border:none;padding:8px 0}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= 标题区 ================= -->
+<header class="hero">
+  <div class="wrap hero-in">
+    <div>
+      <h1>多头自注意力<br><em>一步一步 · 手算拆解</em></h1>
+      <p class="sub">对应你的 <span style="font-family:var(--mono);font-size:14px">MultiHeadAttention</span> 实现 —— 每一步矩阵长什么样、每个数字从哪来，全部算给你看。</p>
+      <div class="chips">
+        <span class="chip">batch <b>B = 1</b></span>
+        <span class="chip">token 数 <b>n = 3</b></span>
+        <span class="chip">词向量 <b>d_model = 4</b></span>
+        <span class="chip">头数 <b>h = 2</b></span>
+        <span class="chip">每头维度 <b>d_head = 2</b></span>
+        <span class="chip">缩放因子 <b>√2</b></span>
+        <span class="chip">偏置 <b>b = 0</b></span>
+      </div>
+      <div class="pipeline">
+        <span class="stg">X <b>(1,3,4)</b></span><span class="ar">→①</span>
+        <span class="stg">Q/K/V <b>(1,2,3,2)</b></span><span class="ar">→②③</span>
+        <span class="stg">scores <b>(1,2,3,3)</b></span><span class="ar">→④</span>
+        <span class="stg">attn <b>(1,2,3,3)</b></span><span class="ar">→⑤</span>
+        <span class="stg">out <b>(1,2,3,2)</b></span><span class="ar">→⑥</span>
+        <span class="stg">拼接 <b>(1,3,4)</b></span><span class="ar">→⑦</span>
+        <span class="stg">输出 <b>(1,3,4)</b></span>
+      </div>
+    </div>
+    <div class="deco" aria-hidden="true">
+      <span style="opacity:.12"></span><span style="opacity:.75"></span><span style="opacity:.30"></span><span style="opacity:.18"></span>
+      <span style="opacity:.66"></span><span style="opacity:.14"></span><span style="opacity:.52"></span><span style="opacity:.22"></span>
+      <span style="opacity:.28"></span><span style="opacity:.48"></span><span style="opacity:.16"></span><span style="opacity:.82"></span>
+      <span style="opacity:.90"></span><span style="opacity:.20"></span><span style="opacity:.60"></span><span style="opacity:.34"></span>
+    </div>
+  </div>
+</header>
+
+<!-- ================= 步骤导航 ================= -->
+<nav id="topnav"><div class="in">
+  <a href="#s0">设定</a><a href="#s1">① 投影拆头</a><a href="#s23">②③ 打分缩放</a>
+  <a href="#s4">④ softmax</a><a href="#s5">⑤ 加权求和</a><a href="#s6">⑥ 拼头</a>
+  <a href="#s7">⑦ 输出投影</a><a href="#s8">易错点 / 速查</a>
+</div></nav>
+
+<main class="wrap">
+
+  <!-- ================= 第 0 步：设定 ================= -->
+  <section id="s0">
+    <div class="step-head"><span class="step-no plain">0</span><h2>设定一个能口算的迷你例子</h2></div>
+    <p>为了把每个数字都算清楚，我们把规模缩到最小：<strong>1 句话、3 个 token</strong>，每个 token 用 <strong>4 维</strong>词向量表示（d_model=4），<strong>2 个头</strong>（h=2），于是每个头分到 <strong>d_head = 4 ÷ 2 = 2</strong> 维。</p>
+    <p>约定：<span class="dim">X 的每一行是一个 token 的词向量 —— 第 1 行是 t₁，第 2 行是 t₂，第 3 行是 t₃。偏置 b 取全 0（代码里本来就用 zeros 初始化，先不扰动它），W 全取小整数，方便口算验证。</span></p>
+    <div class="mrow" id="fig-inputs"></div>
+    <div class="note"><b>看 W 上的颜色：</b>W<sub>q</sub>、W<sub>k</sub>、W<sub>v</sub> 的<b>前两列（青色）只服务头 1</b>，<b>后两列（赭色）只服务头 2</b> —— 一个 (4×4) 大矩阵，其实是两个 (4×2) 小矩阵横向拼在一起。这就是"多头"能共用一次矩阵乘法的原因。</div>
+
+    <p style="margin-top:22px"><b>下面是本文拆解的 PyTorch 代码</b>（即你的实现），①~⑦ 标记对应页面各节：</p>
+    <div class="code"><pre><span class="kw">class</span> MultiHeadAttention(nn.Module):
+    <span class="kw">def</span> __init__(self, d_model, n_heads):
+        super().__init__()
+        <span class="kw">assert</span> d_model % n_heads == 0          <span class="cm"># d_model 必须能整除头数</span>
+        self.h = n_heads
+        self.d_head = d_model // n_heads       <span class="cm"># 每个头的维度 = 2</span>
+
+        self.W_q = nn.Parameter(torch.randn(d_model, d_model) * 0.02)
+        self.W_k = nn.Parameter(torch.randn(d_model, d_model) * 0.02)
+        self.W_v = nn.Parameter(torch.randn(d_model, d_model) * 0.02)
+        self.W_o = nn.Parameter(torch.randn(d_model, d_model) * 0.02)
+        self.b_q = nn.Parameter(torch.zeros(d_model))
+        self.b_k = nn.Parameter(torch.zeros(d_model))
+        self.b_v = nn.Parameter(torch.zeros(d_model))
+        self.b_o = nn.Parameter(torch.zeros(d_model))
+
+    <span class="kw">def</span> _split_heads(self, T):                 <span class="cm"># 传入 (B, n, d_model)</span>
+        B, n, _ = T.shape
+        <span class="kw">return</span> T.view(B, n, self.h, self.d_head).transpose(1, 2)
+        <span class="cm"># 拆头 → (B, h, n, d_head)</span>
+
+    <span class="kw">def</span> forward(self, X):                      <span class="cm"># X: (B, n, d_model)</span>
+        B, n, _ = X.shape
+        Q = self._split_heads(X @ self.W_q + self.b_q)          <span class="ba">①</span> <span class="cm">投影 + 拆头</span>
+        K = self._split_heads(X @ self.W_k + self.b_k)          <span class="ba">①</span>
+        V = self._split_heads(X @ self.W_v + self.b_v)          <span class="ba">①</span>
+
+        scores = Q @ K.transpose(-2, -1) / self.d_head ** 0.5   <span class="ba">②③</span> <span class="cm">打分 + 缩放</span>
+        attn = torch.softmax(scores, dim=-1)                    <span class="ba">④</span>  <span class="cm">归一化</span>
+        out = attn @ V                                          <span class="ba">⑤</span>  <span class="cm">加权求和</span>
+
+        out = out.transpose(1, 2).reshape(B, n, self.h * self.d_head)  <span class="ba">⑥</span> <span class="cm">拼头</span>
+        <span class="kw">return</span> out @ self.W_o + self.b_o, attn                  <span class="ba">⑦</span> <span class="cm">输出投影</span></pre></div>
+  </section>
+
+  <!-- ================= 步骤 ① ================= -->
+  <section id="s1">
+    <div class="step-head"><span class="step-no">①</span><h2>投影 + 拆头</h2><span class="shape-chip">(1,3,4) → (1,2,3,2)</span></div>
+    <p class="formula">Q = X·W<sub>q</sub> + b<sub>q</sub>　→　<span class="fn">_split_heads</span>　→　(B, h, n, d<sub>head</sub>)</p>
+    <p>这一步做两件事：<b>投影</b> —— 每个 token 的 4 维向量乘 W<sub>q</sub>，变换到"查询空间"（K、V 同理换到"被查空间""内容空间"）；<b>拆头</b> —— 把 4 维结果切成 2 段、每段 2 维，分给两个头。</p>
+    <div class="hint">交互提示：把鼠标悬停在结果矩阵的任一数字上，会点亮参与计算的来源 —— <i>青色 = 左因子的对应行</i>，<u>赭色 = 右因子的对应列</u>。后面每个乘法图都可以这样玩。</div>
+    <div class="mrow" id="fig-qproj"></div>
+    <p>逐格看：Q 的第 1 行 = X 第 1 行 [1,0,1,0] 与 W<sub>q</sub> 各列的点积。例如 Q₁₄ = 1×1 + 0×0 + 1×0 + 0×0 = 1。</p>
+
+    <p style="margin-top:20px"><b>拆头：</b><span class="fn" style="font-family:var(--mono);font-size:14px;color:var(--teal)">view(B,n,h,d_head)</span> 先把每个 token 的 4 维<b>切成 2 段</b>（逻辑形状 (1,3,2,2)，不复制数据）；<span class="fn" style="font-family:var(--mono);font-size:14px;color:var(--teal)">transpose(1,2)</span> 再交换第 1、2 维 → <b>(1,2,3,2)</b>，让"头"成为第 2 维 —— 每个头独立拿到全部 3 个 token。</p>
+    <div class="mrow" id="fig-split"></div>
+    <div class="note">注意 Q 的<b>列</b>怎么变成两个头的<b>行块</b>：青色两列（头 1 的子空间）→ Q<sup>头1</sup>；赭色两列（头 2 的子空间）→ Q<sup>头2</sup>。行不变，仍然是 3 个 token。</div>
+    <p class="mnote">K、V 完全同理（各乘自己的 W 再拆头），直接给出结果：</p>
+    <div class="mrow" id="fig-kv"></div>
+  </section>
+
+  <!-- ================= 步骤 ②③ ================= -->
+  <section id="s23">
+    <div class="step-head"><span class="step-no">②③</span><h2>打分 + 缩放：Q·Kᵀ ÷ √d_head</h2><span class="shape-chip">(1,2,3,2)×(1,2,2,3) → (1,2,3,3)</span></div>
+    <p class="formula">scores = Q·K<sup>ᵀ</sup> ÷ √d<sub>head</sub>，　即　s<sub>ij</sub> = q<sub>i</sub>·k<sub>j</sub> ÷ √2</p>
+    <p>打分的含义：<b>query i 和 key j 点积越大 = token i 越该关注 token j</b>。K 先转置成 (2,3)，Q(3×2)·Kᵀ(2×3) 得到 (3×3) 的分数矩阵 —— <b>行是 query，列是 key</b>。</p>
+
+    <p style="margin-top:18px"><b>头 1 的完整计算链：</b></p>
+    <div class="mrow" id="fig-s1"></div>
+    <div class="calcbox" id="calc-dot"></div>
+
+    <p><b>头 2 的完整计算链：</b></p>
+    <div class="mrow" id="fig-s2"></div>
+
+    <div class="why"><b>为什么除以 √d_head，而不是 √d_model？</b><br>
+    点积是 d_head 项乘积之和。若 q、k 的各分量独立、均值 0、方差 1，则 q·k 的方差 = d_head（这里 = 2）。维度越大，分数越分散，softmax 会逼近 one-hot、梯度消失。除以 <b>√d_head</b> 把分数方差拉回 ~1，softmax 保持"软"。<br>
+    每个头是在<b>自己的 d_head 维子空间</b>里打分的，所以除的是 √2；写成 √d_model 是最常见的错误。</div>
+  </section>
+
+  <!-- ================= 步骤 ④ ================= -->
+  <section id="s4">
+    <div class="step-head"><span class="step-no">④</span><h2>Softmax：分数 → 注意力分布</h2><span class="shape-chip">(1,2,3,3) → (1,2,3,3)</span></div>
+    <p class="formula">attn = softmax(scores, dim=-1)，　w<sub>i</sub> = e<sup>xᵢ</sup> ÷ Σ<sub>j</sub> e<sup>xⱼ</sup></p>
+    <p><b>dim=-1 是最后一维 = key 维</b>：对每一行（每个 query）独立做归一化，输出<b>每行和恰好为 1</b> —— 可以读作"query t₁ 把 100% 的注意力分给 k₁/k₂/k₃ 的比例"。</p>
+    <div class="duo">
+      <div class="pair"><p class="t">头 1：颜色深浅 = 权重大小</p><div class="pairin" id="fig-attn1"></div></div>
+      <div class="pair"><p class="t">头 2：颜色深浅 = 权重大小</p><div class="pairin" id="fig-attn2"></div></div>
+    </div>
+    <div class="note">指数的作用：放大差距，让分数最大的 key 拿走大头（头 1 的 q₁ 行里 k₂ 分数 2.83 最高 → 拿走 <b>76.8%</b> 的注意力）。而头 1 的 q₃ 行三个分数完全相等（都是 1.41），softmax 给出完全均匀的 <b>1/3, 1/3, 1/3</b> —— 分数相同则一视同仁。</div>
+  </section>
+
+  <!-- ================= 步骤 ⑤ ================= -->
+  <section id="s5">
+    <div class="step-head"><span class="step-no">⑤</span><h2>加权求和：attn·V</h2><span class="shape-chip">(1,2,3,3)×(1,2,3,2) → (1,2,3,2)</span></div>
+    <p class="formula">out = attn·V，　即　out<sub>i</sub> = Σ<sub>j</sub> w<sub>ij</sub>·v<sub>j</sub></p>
+    <p>每个 query 按注意力权重，把<b>所有 token 的 v 加权混合</b> —— 这就是"信息聚合"：t₁ 的新表示主要由 t₂ 的内容构成（权重 0.77）。</p>
+    <div class="mrow" id="fig-o1"></div>
+    <div class="calcbox" id="calc-wsum"></div>
+    <div class="mrow" id="fig-o2"></div>
+    <div class="note">因为每行权重和为 1，输出是 V 各行的<b>凸组合</b>，永远不会跑出 V 张成的范围。例证：V<sup>头1</sup> 的第 2 维恰好全是 1 → out<sup>头1</sup> 第 2 维<b>精确等于 1</b>；V<sup>头2</sup> 第 1 维全是 1 → out<sup>头2</sup> 第 1 维恒为 1。</div>
+  </section>
+
+  <!-- ================= 步骤 ⑥ ================= -->
+  <section id="s6">
+    <div class="step-head"><span class="step-no">⑥</span><h2>拼头：transpose + reshape，顺序不能反</h2><span class="shape-chip">(1,2,3,2) → (1,3,4)</span></div>
+    <p>现在每个头的输出是 (1,2,3,2)：<b>头在外面、token 在里面</b>。拼接的目标是让每个 token 的两个头的片段重新拼回一个 4 维向量。</p>
+    <p class="formula"><span class="fn">transpose(1,2)</span>：让同一 token 的各头片段相邻　→　<span class="fn">reshape(1,3,4)</span>：拍平成 d_model</p>
+    <div class="mrow" id="fig-concat"></div>
+    <div class="warn"><b>反例：跳过 transpose 直接 reshape 会怎样？</b><br>
+    (2,3,2) 按内存顺序拍平 = 先排头 1 的全部 3 个 token、再接头 2 的 —— 得到下面的"错位矩阵"：第 1 行是头 1 的 t₁、t₂ 硬拼，头 2 的信息直到第 2 行才出现，token 与头完全错乱。</div>
+    <div class="mrow" id="wrong-mtx"></div>
+    <div class="note">另外：transpose 之后张量在内存里<b>不连续</b>，不能再用 .view()（会报错），要用 <b>.reshape()</b>（必要时自动拷贝）或 .contiguous().view()。</div>
+  </section>
+
+  <!-- ================= 步骤 ⑦ ================= -->
+  <section id="s7">
+    <div class="step-head"><span class="step-no">⑦</span><h2>输出投影：让两个头交换信息</h2><span class="shape-chip">(1,3,4)×(4,4) → (1,3,4)</span></div>
+    <p class="formula">输出 = 拼接·W<sub>o</sub> + b<sub>o</sub></p>
+    <p>拼完后每个 token 回到 4 维，但<b>前 2 维只来自头 1、后 2 维只来自头 2</b> —— 两个头还没说过话。W<sub>o</sub> 做一次线性组合，把各头子空间的信息混合起来，并把维度对齐交给下一层（通常随后与残差相加）。</p>
+    <div class="mrow" id="fig-final"></div>
+    <div class="note"><b>返回值 (out, attn)：</b>out (1,3,4) 送给下一层；attn (1,2,3,3) 是 2 张 3×3 注意力热力图（上面 ④ 里那种），专供可视化和分析 —— 行是 query、列是 key。</div>
+  </section>
+
+  <!-- ================= 速查 & 易错点 ================= -->
+  <section id="s8">
+    <div class="step-head"><span class="step-no plain">✓</span><h2>易错点清单 &amp; 形状速查</h2></div>
+    <ol class="pit">
+      <li><b>缩放用 √d_head，不是 √d_model。</b>每个头在自己的 d_head 维子空间里打分（代码 <span style="font-family:var(--mono);font-size:13px">self.d_head ** 0.5</span>）。</li>
+      <li><b>拆头顺序：</b>先 view(B,n,h,d_head)（把 d_model 切成 h 段）再 transpose(1,2)。顺序反了，每个头拿到的维度就是跨头混排的。</li>
+      <li><b>softmax 的 dim=-1：</b>沿 key 维归一化，<b>每行</b>是一个 query 的分布、和为 1。写成 dim=0 会沿 token 方向归一化，语义全错。</li>
+      <li><b>拼头顺序：</b>必须先 transpose(1,2) 再 reshape；直接 reshape 会把头与 token 错位（见 ⑥ 的反例）。transpose 后不连续，用 reshape 而非 view。</li>
+      <li><b>大矩阵 = 多个小矩阵：</b>W_q (d_model×d_model) 等价于 h 个 (d_model×d_head) 小矩阵横向拼接，一次乘法算完所有头 —— 高效的实现方式。</li>
+      <li><b>attn 的形状 (B,h,n,n)：</b>h 张 n×n 热力图，行 = query、列 = key，是调试/可视化注意力的第一手材料。</li>
+    </ol>
+    <table class="sheet">
+      <tr><th>步骤</th><th>张量</th><th>本例形状 (B=1)</th><th>一般形状</th><th>含义</th></tr>
+      <tr><td>输入</td><td class="mo">X</td><td class="mo">(1,3,4)</td><td class="mo">(B, n, d_model)</td><td>3 个 token 的词向量</td></tr>
+      <tr><td>①</td><td class="mo">Q / K / V</td><td class="mo">(1,2,3,2)</td><td class="mo">(B, h, n, d_head)</td><td>每个头 3 个 token 的 query/key/value</td></tr>
+      <tr><td>②③</td><td class="mo">scores</td><td class="mo">(1,2,3,3)</td><td class="mo">(B, h, n, n)</td><td>每头每对 (query, key) 的匹配分</td></tr>
+      <tr><td>④</td><td class="mo">attn</td><td class="mo">(1,2,3,3)</td><td class="mo">(B, h, n, n)</td><td>每行和为 1 的注意力分布</td></tr>
+      <tr><td>⑤</td><td class="mo">out</td><td class="mo">(1,2,3,2)</td><td class="mo">(B, h, n, d_head)</td><td>每头聚合出的上下文向量</td></tr>
+      <tr><td>⑥</td><td class="mo">拼接</td><td class="mo">(1,3,4)</td><td class="mo">(B, n, d_model)</td><td>各头片段拼回 d_model</td></tr>
+      <tr><td>⑦</td><td class="mo">输出</td><td class="mo">(1,3,4)</td><td class="mo">(B, n, d_model)</td><td>混合各头信息，交给下一层</td></tr>
+    </table>
+  </section>
+
+</main>
+
+<footer>
+  本页所有数字均由页面内 JavaScript 按文首 PyTorch 代码的 ①→⑦ 顺序实时计算，与代码严格一致。<br>
+  想复现自己的例子：改脚本开头的 X / W 数值即可（可与 attention.ipynb 对照验证）。
+</footer>
+
+<script>
+(function(){
+'use strict';
+/* ========== 0. 迷你例子设定（改这里即可复现自己的例子） ========== */
+const n = 3, h = 2, d_model = 4;
+const d_head = d_model / h;                 // 2
+const sqrtD = Math.sqrt(d_head);            // √2
+
+const X  = [[1,0,1,0],
+            [0,1,0,1],
+            [1,1,0,0]];
+const Wq = [[1,0,0,1],
+            [0,1,1,0],
+            [1,0,0,0],
+            [0,1,0,0]];
+const Wk = [[0,1,1,0],
+            [1,0,0,1],
+            [0,1,0,0],
+            [1,0,0,0]];
+const Wv = [[1,1,0,0],
+            [0,0,1,1],
+            [1,0,1,0],
+            [0,1,0,1]];
+const Wo = [[1,0,1,0],
+            [0,1,0,1],
+            [1,0,0,0],
+            [0,0,1,1]];
+
+/* ========== 1. 与 PyTorch 逐行等价的小函数 ========== */
+function matmul(A,B){                       // 矩阵乘法
+  const m=A.length,k=B.length,p=B[0].length;
+  const C=Array.from({length:m},()=>new Array(p).fill(0));
+  for(let i=0;i<m;i++)for(let j=0;j<p;j++)for(let t=0;t<k;t++)C[i][j]+=A[i][t]*B[t][j];
+  return C;
+}
+function transpose(A){ return A[0].map((_,j)=>A.map(r=>r[j])); }
+function scaleM(A,s){ return A.map(r=>r.map(v=>v*s)); }
+function softmaxRows(A){                    // 沿最后一维（每行）softmax，对应 dim=-1
+  return A.map(row=>{
+    const ex=row.map(v=>Math.exp(v));
+    const s=ex.reduce((a,b)=>a+b,0);
+    return ex.map(v=>v/s);
+  });
+}
+function splitHeads(M){                     // (n, d_model) -> h 个 (n, d_head)，对应 view+transpose
+  return Array.from({length:h},(_,i)=>M.map(r=>r.slice(i*d_head,(i+1)*d_head)));
+}
+
+/* ========== 2. 按代码顺序逐步计算 ========== */
+const Qf=matmul(X,Wq), Kf=matmul(X,Wk), Vf=matmul(X,Wv);      // ① 投影
+const Q=splitHeads(Qf), K=splitHeads(Kf), V=splitHeads(Vf);   // ① 拆头
+const raw  = Q.map((Qh,i)=>matmul(Qh,transpose(K[i])));       // ② 打分 Q·Kᵀ
+const scores = raw.map(r=>scaleM(r,1/sqrtD));                 // ③ 缩放 ÷√d_head
+const attn  = scores.map(softmaxRows);                        // ④ softmax
+const outH  = attn.map((A,i)=>matmul(A,V[i]));                // ⑤ attn·V
+const concat = outH[0].map((r,i)=>[...r,...outH[1][i]]);      // ⑥ 正确拼头
+const flat = [...outH[0].flat(),...outH[1].flat()];           // ⑥ 反例：直接 reshape
+const wrong = Array.from({length:n},(_,i)=>flat.slice(i*d_model,(i+1)*d_model));
+const Y = matmul(concat,Wo);                                  // ⑦ 输出投影
+
+/* ========== 3. 渲染工具 ========== */
+const $=s=>document.querySelector(s);
+function fmt(x){                              // 整数不带小数点，其余保留 4 位
+  if(Math.abs(x-Math.round(x))<1e-9) return String(Math.round(x));
+  return x.toFixed(4);
+}
+const qL=['q₁','q₂','q₃'], kL=['k₁','k₂','k₃'], vL=['v₁','v₂','v₃'];
+
+function mtx(M,o={}){                         // 把矩阵渲染成带括号的表格
+  const {id='',cap='',rowLbls=null,colLbls=null,cell=null,wrapCls=''}=o;
+  let t='<table class="mtx"'+(id?' id="'+id+'"':'')+'>';
+  if(colLbls) t+='<tr>'+(rowLbls?'<td class="lbl"></td>':'')
+    +colLbls.map(c=>'<td class="lbl">'+c+'</td>').join('')+'</tr>';
+  M.forEach((row,i)=>{
+    t+='<tr>'+(rowLbls?'<td class="lbl">'+rowLbls[i]+'</td>':'');
+    row.forEach((v,j)=>{
+      t+='<td data-i="'+i+'" data-j="'+j+'" '+(cell?cell(i,j):'')+'>'+fmt(v)+'</td>';
+    });
+    t+='</tr>';
+  });
+  t+='</table>';
+  return '<span class="mat">'+(cap?'<span class="cap">'+cap+'</span>':'')
+    +'<span class="mtx-wrap '+wrapCls+'">'+t+'</span></span>';
+}
+const build=(el,html)=>{ $(el).innerHTML=html; };
+const colSplit=(i,j)=> j<d_head ? 'class="h1col"' : 'class="h2col"';   // 列按头着色
+const heat=w=>'style="background:rgba(178,58,34,'+Math.min(.92,.07+w*.85).toFixed(3)+')"'; // 注意力热图
+
+/* ========== 4. 各步骤图示 ========== */
+// —— 第 0 步：输入与参数 ——
+build('#fig-inputs',
+  mtx(X ,{cap:'<b>X</b> (3×4) 输入'})+
+  mtx(Wq,{cap:'<b>W<sub>q</sub></b> (4×4)',cell:colSplit})+
+  mtx(Wk,{cap:'<b>W<sub>k</sub></b> (4×4)',cell:colSplit})+
+  mtx(Wv,{cap:'<b>W<sub>v</sub></b> (4×4)',cell:colSplit})+
+  mtx(Wo,{cap:'<b>W<sub>o</sub></b> (4×4)'})
+);
+
+// —— ①：投影 ——
+build('#fig-qproj',
+  mtx(X ,{id:'m-Xb',cap:'X (3×4)'})+
+  '<span class="op">×</span>'+
+  mtx(Wq,{id:'m-Wqb',cap:'W<sub>q</sub> (4×4)',cell:colSplit})+
+  '<span class="op">=</span>'+
+  mtx(Qf,{id:'m-Qp',cap:'<b>Q (3×4)</b>',cell:colSplit})
+);
+
+// —— ①：拆头 ——
+build('#fig-split',
+  mtx(Qf,{cap:'Q (1,3,4)',cell:colSplit})+
+  '<span class="op">→</span><span class="stage">view(1,3,2,2)<br>transpose(1,2)</span><span class="op">→</span>'+
+  mtx(Q[0],{cap:'<b>Q<sup>头1</sup></b> (1,2,3,2)',rowLbls:qL,wrapCls:'w1'})+
+  mtx(Q[1],{cap:'<b>Q<sup>头2</sup></b> (1,2,3,2)',rowLbls:qL,wrapCls:'w2'})
+);
+build('#fig-kv',
+  mtx(K[0],{cap:'<b>K<sup>头1</sup></b>',rowLbls:kL,wrapCls:'w1'})+
+  mtx(K[1],{cap:'<b>K<sup>头2</sup></b>',rowLbls:kL,wrapCls:'w2'})+
+  mtx(V[0],{cap:'<b>V<sup>头1</sup></b>',rowLbls:vL,wrapCls:'w1'})+
+  mtx(V[1],{cap:'<b>V<sup>头2</sup></b>',rowLbls:vL,wrapCls:'w2'})
+);
+
+// —— ②③：打分 + 缩放（头1） ——
+build('#fig-s1',
+  mtx(Q[0],{id:'m-Q1s',cap:'Q<sup>头1</sup> (3×2)',rowLbls:qL,wrapCls:'w1'})+
+  '<span class="op">·</span>'+
+  mtx(K[0],{id:'m-K1s',cap:'K<sup>头1</sup> (3×2)',rowLbls:kL,wrapCls:'w1'})+
+  '<span class="op"><big>ᵀ</big></span><span class="op">=</span>'+
+  mtx(raw[0],{id:'m-S1r',cap:'原始分数 (3×3)',rowLbls:qL,colLbls:kL})+
+  '<span class="op">÷√2</span>'+
+  mtx(scores[0],{id:'m-S1',cap:'<b>缩放后分数 (3×3)</b>',rowLbls:qL,colLbls:kL})
+);
+// —— ②③：打分 + 缩放（头2） ——
+build('#fig-s2',
+  mtx(Q[1],{id:'m-Q2s',cap:'Q<sup>头2</sup> (3×2)',rowLbls:qL,wrapCls:'w2'})+
+  '<span class="op">·</span>'+
+  mtx(K[1],{id:'m-K2s',cap:'K<sup>头2</sup> (3×2)',rowLbls:kL,wrapCls:'w2'})+
+  '<span class="op"><big>ᵀ</big></span><span class="op">=</span>'+
+  mtx(raw[1],{id:'m-S2r',cap:'原始分数 (3×3)',rowLbls:qL,colLbls:kL})+
+  '<span class="op">÷√2</span>'+
+  mtx(scores[1],{id:'m-S2',cap:'<b>缩放后分数 (3×3)</b>',rowLbls:qL,colLbls:kL})
+);
+
+// —— ②③：单格手算展开（头1 的 q₁·k₂） ——
+(function(){
+  const q=Q[0][0], k=K[0][1];                 // q₁ 与 k₂
+  const terms=q.map((v,t)=>fmt(v)+'×'+fmt(k[t])).join(' + ');
+  const dot=q.reduce((a,v,t)=>a+v*k[t],0);
+  $('#calc-dot').innerHTML=
+    '<p>以头 1 分数矩阵的 <b>第 1 行第 2 列</b>（q₁ 对 k₂）为例，其余 8 格完全同理：</p>'
+    +'<span class="exp">q₁·k₂ = '+terms+' = <b>'+fmt(dot)+'</b></span>'
+    +'<span class="exp">s₁₂ = '+fmt(dot)+' ÷ √'+d_head+' = '+fmt(dot)+' ÷ '+sqrtD.toFixed(4)+' = <b>'+fmt(dot/sqrtD)+'</b></span>'
+    +'<p>这正是缩放后分数矩阵 (1,2) 位置的值 <b>'+fmt(scores[0][0][1])+'</b>。K 加 ᵀ 只是为了让矩阵乘法一次算出全部 9 个点积。</p>';
+})();
+
+// —— ④：softmax 明细表 ——
+function smTable(row,lbls){
+  const ex=row.map(v=>Math.exp(v));
+  const s=ex.reduce((a,b)=>a+b,0);
+  return '<table class="sm">'
+    +'<tr><td class="lbl"></td>'+lbls.map(c=>'<td class="lbl">'+c+'</td>').join('')+'</tr>'
+    +'<tr><td class="lbl">分数 x</td>'+row.map(v=>'<td>'+fmt(v)+'</td>').join('')+'</tr>'
+    +'<tr><td class="lbl">e<sup>x</sup></td>'+ex.map(v=>'<td>'+v.toFixed(4)+'</td>').join('')+'</tr>'
+    +'<tr><td class="lbl">w = e<sup>x</sup>/Σ</td>'+ex.map(v=>'<td>'+(v/s).toFixed(4)+'</td>').join('')+'</tr>'
+    +'<tr><td class="lbl">Σe<sup>x</sup></td><td colspan="'+lbls.length+'">'+s.toFixed(4)+'</td></tr>'
+    +'</table>';
+}
+build('#fig-attn1',
+  mtx(attn[0],{cap:'<b>attn<sup>头1</sup></b> (3×3)',rowLbls:qL,colLbls:kL,cell:(i,j)=>heat(attn[0][i][j])})+
+  smTable(scores[0][0],kL)
+);
+build('#fig-attn2',
+  mtx(attn[1],{cap:'<b>attn<sup>头2</sup></b> (3×3)',rowLbls:qL,colLbls:kL,cell:(i,j)=>heat(attn[1][i][j])})+
+  smTable(scores[1][2],kL)
+);
+
+// —— ⑤：加权求和（头1 全链 + 展开） ——
+build('#fig-o1',
+  mtx(attn[0],{id:'m-A1o',cap:'attn<sup>头1</sup> (3×3)',rowLbls:qL,colLbls:kL})+
+  '<span class="op">×</span>'+
+  mtx(V[0],{id:'m-V1o',cap:'V<sup>头1</sup> (3×2)',rowLbls:vL,wrapCls:'w1'})+
+  '<span class="op">=</span>'+
+  mtx(outH[0],{id:'m-O1',cap:'<b>out<sup>头1</sup> (3×2)</b>',rowLbls:qL,wrapCls:'w1'})
+);
+(function(){
+  const w=attn[0][0], vs=V[0];                // 头1 q₁ 行的权重与 V
+  const comp=t=>w.map((x,j)=>x.toFixed(4)+'×'+fmt(vs[j][t])).join(' + ');
+  const val=t=>w.reduce((a,x,j)=>a+x*vs[j][t],0);
+  $('#calc-wsum').innerHTML=
+    '<p>以头 1 的 <b>q₁ 行</b>为例（权重来自 ④，v 下标对应 k₁/k₂/k₃）：</p>'
+    +'<span class="exp">out₁ = '+w[0].toFixed(4)+'·v₁ + '+w[1].toFixed(4)+'·v₂ + '+w[2].toFixed(4)+'·v₃</span>'
+    +'<span class="exp">第 1 维 = '+comp(0)+' = <b>'+fmt(val(0))+'</b></span>'
+    +'<span class="exp">第 2 维 = '+comp(1)+' = <b>'+fmt(val(1))+'</b></span>';
+})();
+build('#fig-o2',
+  mtx(attn[1],{id:'m-A2o',cap:'attn<sup>头2</sup> (3×3)',rowLbls:qL,colLbls:kL})+
+  '<span class="op">×</span>'+
+  mtx(V[1],{id:'m-V2o',cap:'V<sup>头2</sup> (3×2)',rowLbls:vL,wrapCls:'w2'})+
+  '<span class="op">=</span>'+
+  mtx(outH[1],{id:'m-O2',cap:'<b>out<sup>头2</sup> (3×2)</b>',rowLbls:qL,wrapCls:'w2'})
+);
+
+// —— ⑥：拼头（正确 vs 反例） ——
+build('#fig-concat',
+  mtx(outH[0],{cap:'out<sup>头1</sup> (1,2,3,2)',rowLbls:qL,wrapCls:'w1'})+
+  mtx(outH[1],{cap:'out<sup>头2</sup> (1,2,3,2)',rowLbls:qL,wrapCls:'w2'})+
+  '<span class="op">→</span><span class="stage">transpose(1,2)<br>reshape(1,3,4)</span><span class="op">→</span>'+
+  mtx(concat,{cap:'<b>拼接 (1,3,4)</b>',rowLbls:qL,cell:colSplit})
+);
+build('#wrong-mtx',
+  mtx(wrong,{cap:'<b>直接 reshape 的错误结果 (1,3,4)</b>',rowLbls:['t₁','t₂','t₃']})
+);
+
+// —— ⑦：输出投影 ——
+build('#fig-final',
+  mtx(concat,{id:'m-Cf',cap:'拼接 (1,3,4)',rowLbls:qL,cell:colSplit})+
+  '<span class="op">×</span>'+
+  mtx(Wo,{id:'m-Wof',cap:'W<sub>o</sub> (4×4)'})+
+  '<span class="op">=</span>'+
+  mtx(Y,{id:'m-Y',cap:'<b>最终输出 (1,3,4)</b>',rowLbls:qL})
+);
+
+/* ========== 5. 悬停高亮：结果格 → 点亮来源 ========== */
+function link(resSel,aSel,bSel,mode){
+  const R=$(resSel),A=$(aSel),B=$(bSel);
+  if(!R||!A||!B) return;
+  const cells=t=>t.querySelectorAll('td[data-i]');
+  cells(R).forEach(td=>{
+    td.addEventListener('mouseenter',()=>{
+      const i=+td.dataset.i, j=+td.dataset.j;
+      cells(A).forEach(c=>c.classList.toggle('hla',+c.dataset.i===i));
+      cells(B).forEach(c=>{
+        const hit = mode==='row-row' ? (+c.dataset.i===j) : (+c.dataset.j===j);
+        c.classList.toggle('hlb',hit);
+      });
+      td.classList.add('hlr');
+    });
+    td.addEventListener('mouseleave',()=>{
+      cells(A).forEach(c=>c.classList.remove('hla'));
+      cells(B).forEach(c=>c.classList.remove('hlb'));
+      td.classList.remove('hlr');
+    });
+  });
+}
+link('#m-Qp' ,'#m-Xb' ,'#m-Wqb','row-col');   // Q = X·Wq
+link('#m-S1r','#m-Q1s','#m-K1s','row-row');   // S = Q·Kᵀ（悬停 S(i,j) 点亮 q_i 行与 k_j 行）
+link('#m-S1' ,'#m-Q1s','#m-K1s','row-row');
+link('#m-S2r','#m-Q2s','#m-K2s','row-row');
+link('#m-S2' ,'#m-Q2s','#m-K2s','row-row');
+link('#m-O1' ,'#m-A1o','#m-V1o','row-col');   // out = attn·V
+link('#m-O2' ,'#m-A2o','#m-V2o','row-col');
+link('#m-Y'  ,'#m-Cf' ,'#m-Wof','row-col');   // 输出 = 拼接·Wo
+
+/* ========== 6. 顶部导航滚动高亮 ========== */
+const links=[...document.querySelectorAll('#topnav a')];
+const map={}; links.forEach(a=>map[a.getAttribute('href').slice(1)]=a);
+const io=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+    if(e.isIntersecting){
+      links.forEach(a=>a.classList.remove('active'));
+      if(map[e.target.id]) map[e.target.id].classList.add('active');
+    }
+  });
+},{rootMargin:'-25% 0px -65% 0px'});
+document.querySelectorAll('main section[id]').forEach(s=>io.observe(s));
+})();
+</script>
+</body>
+</html>
