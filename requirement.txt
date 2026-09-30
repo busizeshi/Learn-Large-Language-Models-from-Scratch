@@ -1,10 +1,35 @@
-# 项目核心依赖
+﻿# 项目核心依赖
+# 安装命令：
+#   pip install -r requirement.txt
+#
+# 注意：d2l 不在本文件中，必须单独安装（原因见文件末尾说明）。
+#
 # PyTorch（Windows 下 pip 默认安装 CPU 版；如需 GPU/CUDA 版本，请按 https://pytorch.org 指定 index-url 安装）
 torch>=2.0
 numpy>=1.24
 pandas>=1.4
 matplotlib>=3.7
 torchvision>=0.15.0
-d2l>=0.17.6
 regex>=2023.1.1
 tiktoken>=0.1.1
+
+# ---------------------------------------------------------------------------
+# 关于 d2l：为什么单独装、不能写进本文件
+#
+# d2l 的依赖是写死等号的精确钉版，例如：
+#   d2l 0.17.6 -> numpy==1.21.5, pandas==1.2.4, matplotlib==3.5.1
+#   d2l 1.0.2  -> numpy==1.23.5, pandas==2.0.3, matplotlib==3.7.2
+# 这些版本与本文件的 numpy>=1.24 / pandas>=1.4 数学上无解，pip 会陷入
+# 无限回溯：反复下载 200MB 级的 torch wheel 做候选，最后去下 numpy 源码包
+# 试图用 meson + MSVC 现场编译，报 "Could not find vswhere.exe" 而失败。
+#
+# 因此：把 d2l 从本文件移除，用 --no-deps 单独安装，复用它声明之外的新版本依赖。
+# 请先执行上面的 pip install -r requirement.txt，再执行下面这条：
+#
+#   pip install --no-deps d2l==0.17.6
+#
+# --no-deps 无法写在 requirement.txt 里，只能作为命令参数手动执行。
+# 如需在 notebook 中使用 d2l（它声明依赖 jupyter），再额外安装 jupyter 即可：
+#
+#   pip install jupyter
+# ---------------------------------------------------------------------------
