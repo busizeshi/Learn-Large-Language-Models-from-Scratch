@@ -39,6 +39,9 @@ checkpoints/
 data/
 datasets/
 
+# 分词器词表（Llama3 tokenizer.model，需从 Meta 官方仓库自行下载，约 2MB）
+tokenizer.model
+
 # Jupyter Notebook
 .ipynb_checkpoints/
 
