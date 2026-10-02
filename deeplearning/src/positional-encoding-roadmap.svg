@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="470" viewBox="0 0 940 470" font-family="'Noto Sans CJK SC','WenQuanYi Micro Hei','Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f6f8b"/>
+    </marker>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b5443f"/>
+    </marker>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24,0 L0,0 0,24" fill="none" stroke="#1f6f8b" stroke-opacity="0.07"/>
+    </pattern>
+  </defs>
+
+  <rect width="940" height="470" fill="#faf7f0"/>
+  <rect width="940" height="470" fill="url(#grid)"/>
+
+  <!-- 标题 -->
+  <text x="30" y="34" font-size="21" font-weight="700" fill="#22333f">位置编码 · 学习路线图</text>
+  <text x="30" y="55" font-size="12.5" fill="#7c6f64">从「注意力看不见顺序」出发 → 一步步演化出正弦编码 → 源码落地 → 四项分解看局限 → 家族改进</text>
+
+  <!-- 第一行：问题 + 演化链 -->
+  <rect x="30" y="74" width="200" height="84" rx="10" fill="#fdf0ee" stroke="#b5443f" stroke-width="1.6"/>
+  <text x="44" y="96" font-size="12" font-weight="700" fill="#b5443f">问题</text>
+  <text x="44" y="116" font-size="14.5" font-weight="700" fill="#22333f">注意力是“词袋”</text>
+  <text x="44" y="136" font-size="11" fill="#5a504a">置换不变性：打乱 token 顺序，</text>
+  <text x="44" y="151" font-size="11" fill="#5a504a">输出只跟着换位，内容不变</text>
+
+  <line x1="234" y1="116" x2="254" y2="116" stroke="#1f6f8b" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- 演化链 5 块 -->
+  <g font-size="11.5">
+    <rect x="262" y="74" width="112" height="84" rx="10" fill="#f2ede4" stroke="#8a7f70" stroke-width="1.2"/>
+    <text x="274" y="94" font-weight="700" fill="#22333f">① 整型</text>
+    <text x="274" y="112" fill="#5a504a">0,1,2,3,…</text>
+    <text x="274" y="130" fill="#a04b42">无界·不泛化</text>
+    <text x="274" y="148" fill="#a04b42">数值失衡</text>
+
+    <line x1="378" y1="116" x2="392" y2="116" stroke="#1f6f8b" stroke-width="1.8" marker-end="url(#ar)"/>
+
+    <rect x="400" y="74" width="112" height="84" rx="10" fill="#f2ede4" stroke="#8a7f70" stroke-width="1.2"/>
+    <text x="412" y="94" font-weight="700" fill="#22333f">② 乘法</text>
+    <text x="412" y="112" fill="#5a504a">pos · v</text>
+    <text x="412" y="130" fill="#a04b42">交换律 → 无方向</text>
+    <text x="412" y="148" fill="#a04b42">分不清前后</text>
+
+    <line x1="516" y1="116" x2="530" y2="116" stroke="#1f6f8b" stroke-width="1.8" marker-end="url(#ar)"/>
+
+    <rect x="538" y="74" width="112" height="84" rx="10" fill="#f2ede4" stroke="#8a7f70" stroke-width="1.2"/>
+    <text x="550" y="94" font-weight="700" fill="#22333f">③ 归一化</text>
+    <text x="550" y="112" fill="#5a504a">pos / n</text>
+    <text x="550" y="130" fill="#a04b42">步长随句长变化</text>
+    <text x="550" y="148" fill="#a04b42">同距离·不同差</text>
+
+    <line x1="654" y1="116" x2="668" y2="116" stroke="#1f6f8b" stroke-width="1.8" marker-end="url(#ar)"/>
+
+    <rect x="676" y="74" width="112" height="84" rx="10" fill="#f2ede4" stroke="#8a7f70" stroke-width="1.2"/>
+    <text x="688" y="94" font-weight="700" fill="#22333f">④ 二进制</text>
+    <text x="688" y="112" fill="#5a504a">0001 → 0010</text>
+    <text x="688" y="130" fill="#a04b42">有界但离散跳变</text>
+    <text x="688" y="148" fill="#a04b42">不连续·不平滑</text>
+
+    <line x1="792" y1="116" x2="806" y2="116" stroke="#1f6f8b" stroke-width="1.8" marker-end="url(#ar)"/>
+
+    <rect x="814" y="74" width="112" height="84" rx="10" fill="#1f6f8b" stroke="#17536a" stroke-width="1.4"/>
+    <text x="826" y="94" font-weight="700" fill="#ffffff">⑤ 正弦 ✓</text>
+    <text x="826" y="112" fill="#eaf3f7">sin / cos 多频率</text>
+    <text x="826" y="130" fill="#eaf3f7">有界·平滑</text>
+    <text x="826" y="148" fill="#eaf3f7">含相对位置</text>
+  </g>
+
+  <!-- 折线箭头：⑤ → 第二行块B -->
+  <polyline points="870,160 870,174 180,174 180,188" fill="none" stroke="#1f6f8b" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <!-- 第二行：正弦性质 → 哈佛源码 → 四项分解 -->
+  <rect x="30" y="192" width="300" height="112" rx="10" fill="#ffffff" stroke="#1f6f8b" stroke-width="1.6"/>
+  <text x="44" y="214" font-size="13" font-weight="700" fill="#1f6f8b">正弦编码 · 两大性质</text>
+  <text x="44" y="234" font-size="11.5" fill="#33414b">① 绝对指纹：每个位置一条唯一的</text>
+  <text x="44" y="250" font-size="11.5" fill="#33414b">　 sin/cos 波形组合，互不重复</text>
+  <text x="44" y="270" font-size="11.5" fill="#33414b">② 相对位置 = 旋转：PE(pos+k)=R·PE(pos)</text>
+  <text x="44" y="286" font-size="11.5" fill="#33414b">　 内积 ⟨PE_t, PE_t+k⟩ 只依赖 k，且随 |k| 增大总体衰减</text>
+
+  <line x1="336" y1="248" x2="358" y2="248" stroke="#1f6f8b" stroke-width="2" marker-end="url(#ar)"/>
+
+  <rect x="366" y="192" width="240" height="112" rx="10" fill="#ffffff" stroke="#d9a441" stroke-width="1.6"/>
+  <text x="380" y="214" font-size="13" font-weight="700" fill="#a97b1e">哈佛源码落地</text>
+  <text x="380" y="234" font-size="11.5" fill="#33414b">pe[:, 0::2]=sin，pe[:, 1::2]=cos</text>
+  <text x="380" y="252" font-size="11.5" fill="#33414b">register_buffer：随模型保存、不训练</text>
+  <text x="380" y="270" font-size="11.5" fill="#33414b">forward：x + pe[:, :seq_len]</text>
+  <text x="380" y="288" font-size="11.5" fill="#33414b">再 dropout 防过拟合</text>
+
+  <line x1="612" y1="248" x2="634" y2="248" stroke="#1f6f8b" stroke-width="2" marker-end="url(#ar)"/>
+
+  <rect x="642" y="192" width="284" height="112" rx="10" fill="#ffffff" stroke="#b5443f" stroke-width="1.6"/>
+  <text x="656" y="214" font-size="13" font-weight="700" fill="#b5443f">进入注意力 · 四项分解</text>
+  <text x="656" y="234" font-size="11.5" fill="#33414b">(x_t+p_t)ᵀW_QᵀW_K(x_s+p_s) = (a)+(b)+(c)+(d)</text>
+  <text x="656" y="252" font-size="11.5" fill="#33414b">(a) 内容×内容　(b)(c) 内容×位置</text>
+  <text x="656" y="270" font-size="11.5" fill="#33414b">(d) 位置×位置：唯一携带相对信息的项</text>
+  <text x="656" y="288" font-size="11.5" fill="#a04b42">但 W_QᵀW_K 投影可能破坏远程衰减！</text>
+
+  <!-- 折线箭头：块D → 第三行块F -->
+  <polyline points="784,308 784,322 565,322 565,336" fill="none" stroke="#1f6f8b" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <!-- 第三行：局限 → 家族 -->
+  <rect x="30" y="340" width="300" height="106" rx="10" fill="#fdf0ee" stroke="#b5443f" stroke-width="1.6"/>
+  <text x="44" y="362" font-size="13" font-weight="700" fill="#b5443f">正弦编码的局限</text>
+  <text x="44" y="382" font-size="11.5" fill="#33414b">· 无向性：分不清“在前面还是在后面”</text>
+  <text x="44" y="400" font-size="11.5" fill="#33414b">　（靠因果掩码补救）</text>
+  <text x="44" y="418" font-size="11.5" fill="#33414b">· 外推受限于 max_len 上限</text>
+  <text x="44" y="436" font-size="11.5" fill="#33414b">· 投影破坏衰减（见左上四项分解）</text>
+
+  <line x1="336" y1="393" x2="358" y2="393" stroke="#b5443f" stroke-width="2" marker-end="url(#arr)"/>
+
+  <rect x="366" y="340" width="560" height="106" rx="10" fill="#eef4f0" stroke="#2e7d5b" stroke-width="1.6"/>
+  <text x="380" y="362" font-size="13" font-weight="700" fill="#2e7d5b">改进家族 · 相对位置编码（第 8 章）</text>
+  <text x="380" y="382" font-size="11.5" fill="#33414b">偏置方案（往注意力分数加标量）：T5 · ALiBi · TUPE</text>
+  <text x="380" y="400" font-size="11.5" fill="#33414b">上下文方案（把相对位置织进 K/V）：经典式 · Transformer-XL · TENER · DeBERTa</text>
+  <text x="380" y="422" font-size="11.5" fill="#5a504a">异端：NoPE —— 什么都不加也行（因果注意力自带时序），但长文本分辨率不足</text>
+  <text x="380" y="440" font-size="11" fill="#7c8a7f">配套：本笔记本代码实验 + 交互演示网页（文末链接）</text>
+</svg>
