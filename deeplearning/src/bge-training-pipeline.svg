@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="252" viewBox="0 0 920 252" font-family="'Noto Sans CJK SC','WenQuanYi Micro Hei','Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="arr-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0969DA"/>
+    </marker>
+  </defs>
+  <!-- stage labels -->
+  <text x="102" y="34" text-anchor="middle" font-size="12" font-weight="600" fill="#9AA2B1">底座</text>
+  <text x="340" y="34" text-anchor="middle" font-size="12" font-weight="600" fill="#9AA2B1">阶段 ①</text>
+  <text x="578" y="34" text-anchor="middle" font-size="12" font-weight="600" fill="#9AA2B1">阶段 ②</text>
+  <text x="817" y="34" text-anchor="middle" font-size="12" font-weight="600" fill="#9AA2B1">阶段 ③</text>
+  <!-- stage 0: base -->
+  <g>
+    <rect x="10" y="46" width="185" height="96" rx="12" fill="#EDF1F7" stroke="#D9DEE7"/>
+    <text x="102" y="78" text-anchor="middle" font-size="15" font-weight="700" fill="#1F2430">预训练底座</text>
+    <text x="102" y="102" text-anchor="middle" font-size="11.5" fill="#6B7383">XLM-RoBERTa / BERT</text>
+    <text x="102" y="121" text-anchor="middle" font-size="11.5" fill="#6B7383">双向 Transformer 编码器</text>
+  </g>
+  <!-- stage 1: RetroMAE -->
+  <g>
+    <rect x="248" y="46" width="185" height="96" rx="12" fill="#EEF4FC" stroke="#DCE9F9"/>
+    <text x="340" y="78" text-anchor="middle" font-size="15" font-weight="700" fill="#05468F">RetroMAE 预训练</text>
+    <text x="340" y="102" text-anchor="middle" font-size="11.5" fill="#3D4454">非对称遮盖：编轻解狠</text>
+    <text x="340" y="121" text-anchor="middle" font-size="11.5" fill="#3D4454">为「句级表示」打底</text>
+  </g>
+  <!-- stage 2: contrastive -->
+  <g>
+    <rect x="486" y="46" width="185" height="96" rx="12" fill="#F3EDFC" stroke="#E2D6F5"/>
+    <text x="578" y="78" text-anchor="middle" font-size="15" font-weight="700" fill="#6639BA">大规模对比学习</text>
+    <text x="578" y="102" text-anchor="middle" font-size="11.5" fill="#3D4454">无标注句对 + 负例</text>
+    <text x="578" y="121" text-anchor="middle" font-size="11.5" fill="#3D4454">语义相近 → 向量靠近</text>
+  </g>
+  <!-- stage 3: finetune -->
+  <g>
+    <rect x="724" y="46" width="186" height="96" rx="12" fill="#E7F6F9" stroke="#C9E9F0"/>
+    <text x="817" y="78" text-anchor="middle" font-size="15" font-weight="700" fill="#0A6E7C">精标数据微调</text>
+    <text x="817" y="102" text-anchor="middle" font-size="11.5" fill="#3D4454">难负例 + 检索指令</text>
+    <text x="817" y="121" text-anchor="middle" font-size="11.5" fill="#3D4454">对齐真实检索任务</text>
+  </g>
+  <!-- arrows -->
+  <line x1="195" y1="94" x2="242" y2="94" stroke="#0969DA" stroke-width="2" marker-end="url(#arr-b)"/>
+  <line x1="433" y1="94" x2="480" y2="94" stroke="#0969DA" stroke-width="2" marker-end="url(#arr-b)"/>
+  <line x1="671" y1="94" x2="718" y2="94" stroke="#0969DA" stroke-width="2" marker-end="url(#arr-b)"/>
+  <!-- artifact pills -->
+  <line x1="340" y1="142" x2="340" y2="166" stroke="#C4CBD6" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <line x1="578" y1="142" x2="578" y2="166" stroke="#C4CBD6" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <line x1="817" y1="142" x2="817" y2="166" stroke="#C4CBD6" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <rect x="265" y="168" width="150" height="24" rx="12" fill="#F6F8FA" stroke="#E1E5EA"/>
+  <text x="340" y="184" text-anchor="middle" font-size="11" fill="#3D4454" font-family="Consolas, monospace">bge-m3-retromae</text>
+  <rect x="498" y="168" width="160" height="24" rx="12" fill="#F6F8FA" stroke="#E1E5EA"/>
+  <text x="578" y="184" text-anchor="middle" font-size="11" fill="#3D4454" font-family="Consolas, monospace">bge-m3-unsupervised</text>
+  <rect x="742" y="168" width="150" height="24" rx="12" fill="#F6F8FA" stroke="#E1E5EA"/>
+  <text x="817" y="184" text-anchor="middle" font-size="11" fill="#3D4454" font-family="Consolas, monospace">bge-m3 / v1.5 系列</text>
+  <!-- bottom note -->
+  <text x="460" y="232" text-anchor="middle" font-size="13" fill="#6B7383">三个阶段都不换架构——只是换「训练目标」和「数据」，逐步把通用编码器改造成检索专家</text>
+</svg>
